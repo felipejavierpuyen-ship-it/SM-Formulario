@@ -1,0 +1,20 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <!-- EMP API component -->
+    <lightning:empApi aura:id="empApi" />
+
+    <!-- Calls the onInit controller function on component initalization -->
+    <aura:handler name="init" value="{!this}" action="{!c.onInit}"/>
+
+    <!-- Holds the streaming event subscription -->
+    <aura:attribute name="subscription" type="Map" />
+
+    <!-- Render OmniScript using supported attributes -->
+    <aura:attribute name="showOmni" type="Boolean" default="true" />
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute name="userId" type="Id" />
+
+    <aura:if isTrue="{!v.showOmni}">
+        <c:slipPatrimonialesEnglish recordId="{!v.recordId}" layout="lightning" />
+    </aura:if>
+
+</aura:component>

@@ -1,0 +1,75 @@
+<template>
+    <div class="slds-m-bottom_medium">
+        <h3 class="slds-text-heading_small slds-m-bottom_medium">4. INFORMACIÓN ACCIONISTAS</h3>
+
+        <div class="slds-box slds-theme_shade slds-m-bottom_medium">
+            <p class="slds-text-title_bold">INSTRUCCIONES DE DILIGENCIAMIENTO:</p>
+            <ul class="slds-list_dotted">
+                <li>Relacione accionistas con más del **5% del Capital Social**.</li>
+                <li>Si la persona jurídica no cotiza en bolsa, relacione la composición en la **Sección 5**.</li>
+                <li>Si el accionista es **PEP**, diligencie la sección correspondiente.</li>
+            </ul>
+        </div>
+
+        <div class="slds-scrollable_x">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 200px;">Tipo Doc.</th>
+                        <th style="width: 150px;">Identificación</th>
+                        <th style="width: 250px;">Nombre Completo</th>
+                        <th style="width: 100px;">% Part.</th>
+                        <th style="width: 120px;">Cotiza Bolsa?</th>
+                        <th style="width: 100px;">PEP?</th>
+                        <th style="width: 100px;">Tributa Exterior?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={shareholders} for:item="sh">
+                        <tr key={sh.id}>
+                            <td>{sh.id}</td>
+                            <td>
+                                <lightning-combobox
+                                    variant="label-hidden"
+                                    options={documentTypeOptions}
+                                    value={sh.tipoDocumento}
+                                    onchange={handleShareholderChange}
+                                    data-id={sh.id}
+                                    data-field="tipoDocumento">
+                                </lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-input variant="label-hidden" value={sh.numeroDocumento} onchange={handleShareholderChange} data-id={sh.id} data-field="numeroDocumento"></lightning-input>
+                            </td>
+                            <td>
+                                <lightning-input variant="label-hidden" value={sh.nombreCompleto} onchange={handleShareholderChange} data-id={sh.id} data-field="nombreCompleto"></lightning-input>
+                            </td>
+                            <td>
+                                <lightning-input type="number" variant="label-hidden" value={sh.participacion} onchange={handleShareholderChange} data-id={sh.id} data-field="participacion"></lightning-input>
+                            </td>
+                            <td>
+                                <lightning-combobox variant="label-hidden" options={yesNoOptions} value={sh.cotizaEnBolsa} onchange={handleShareholderChange} data-id={sh.id} data-field="cotizaEnBolsa"></lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-combobox variant="label-hidden" options={yesNoOptions} value={sh.esPEP} onchange={handleShareholderChange} data-id={sh.id} data-field="esPEP"></lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-combobox variant="label-hidden" options={yesNoOptions} value={sh.tributaOtroPais} onchange={handleShareholderChange} data-id={sh.id} data-field="tributaOtroPais"></lightning-combobox>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="slds-m-top_medium">
+            <lightning-button label="Agregar Accionista" icon-name="utility:add" onclick={addShareholder}></lightning-button>
+        </div>
+
+        <div class="slds-grid slds-grid_align-center slds-p-top_large">
+            <lightning-button label="Atrás" onclick={handlePrevious} class="slds-m-right_x-small"></lightning-button>
+            <lightning-button label="Siguiente" variant="brand" onclick={handleNext} class="slds-m-left_x-small"></lightning-button>
+        </div>
+    </div>
+</template>

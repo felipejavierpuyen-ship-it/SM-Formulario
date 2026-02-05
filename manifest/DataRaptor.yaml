@@ -1,0 +1,4 @@
+projectPath: ./dataPack
+maxDeph: 0
+manifest:
+- DataRaptor/DRObtenerSlip

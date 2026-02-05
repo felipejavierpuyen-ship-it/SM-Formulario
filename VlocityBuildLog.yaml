@@ -1,0 +1,19 @@
+Org: fpuyen@fastcloudconsulting.com.alfa
+Version: 1.17.15
+Node: v18.19.1
+PackageVersion: '890.454'
+Namespace: vlocity_ins
+Job: VDX
+Action: Deploy
+ProjectPath: ./dataPack
+TotalTime: 0m 57s
+Count:
+  Success: {}
+Errors: []
+Status:
+  Success: {}
+StatusCount:
+  Remaining: 0
+  Success: 1
+  Error: 0
+id: !<tag:yaml.org,2002:js/undefined> ''

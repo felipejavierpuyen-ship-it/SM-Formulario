@@ -1,0 +1,5 @@
+projectPath: ./dataPack
+queries:
+  - VlocityDataPackType: SObject
+    query: SELECT Id, Name FROM vlocity_ins__DocumentTemplate__c where id not in ('a3ZU9000000VfdBMAS', 'a3ZU9000000W23VMAS')
+

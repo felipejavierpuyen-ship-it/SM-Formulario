@@ -1,0 +1,5 @@
+projectPath: ./dataPack
+maxDeph: 0
+manifest:
+- OmniScript/Documento_Slip_English
+- OmniScript/Slip_Patrimoniales_English

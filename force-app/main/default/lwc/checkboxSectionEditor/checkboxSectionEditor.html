@@ -1,0 +1,102 @@
+<template>
+    <section class="slds-section slds-is-open" style="width:100%;">
+        <template if:true={title}>
+            <button class="slds-section__title slds-button slds-button_reset"
+                    onclick={toggleSection}
+                    style="width:100%; display:block; margin-bottom: 1rem;">
+                <span class="slds-section__title-action">
+                    <lightning-icon icon-name={iconName} size="xx-small"
+                                    class="slds-section__title-action-icon slds-button__icon_left">
+                    </lightning-icon>
+                    <h3 class="slds-truncate" title={title}>{title}</h3>
+                </span>
+            </button>
+        </template>
+
+        <div class="slds-section__content" if:true={isOpen}>
+            <lightning-card>
+                <template if:true={groupedCheckboxes}>
+                    <template for:each={groupedCheckboxes} for:item="item">
+                        <template if:true={item.isHeader}>
+                            <div key={item.label} class="categoria-header">
+                                <h3>{item.label}</h3>
+                                <hr />
+                            </div>
+                        </template>
+
+                        <template if:true={item.isCheckbox}>
+                            <div key={item.data.id} class="checkbox-row">
+                                <lightning-input type="checkbox"
+                                                 label={item.data.etiqueta}
+                                                 checked={item.data.seleccionado}
+                                                 data-id={item.data.id}
+                                                 onchange={handleCheckboxChange}>
+                                </lightning-input>
+
+                                <lightning-helptext content={item.data.ayuda}></lightning-helptext>
+
+                                <template if:true={item.data.editable}>
+                                    <lightning-button label="Editar Sección"
+                                                      icon-name="utility:edit"
+                                                      variant="brand"
+                                                      onclick={openModal}
+                                                      data-id={item.data.id}
+                                                      class="edit-button">
+                                    </lightning-button>
+                                </template>
+                                <template if:false={item.data.editable}>
+                                    <lightning-button label="Ver Sección"
+                                                      icon-name="utility:preview"
+                                                      variant="neutral"
+                                                      onclick={openViewModal}
+                                                      data-id={item.data.id}
+                                                      class="edit-button">
+                                    </lightning-button>
+                                </template>
+                            </div>
+                        </template>
+                    </template>
+                </template>
+            </lightning-card>
+
+            <!-- Modal -->
+            <template if:true={isModalOpen}>
+                <section class={modalClass}>
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <h2 id="modal-heading" class="slds-text-heading_medium">{modalTitle}</h2>
+                            <template if:false={isReadOnlyModal}>
+                                <lightning-button-icon icon-name="utility:full_view"
+                                                       variant="bare"
+                                                       onclick={toggleFullscreen}
+                                                       class="fullscreen-toggle"
+                                                       alternative-text="Pantalla completa">
+                                </lightning-button-icon>
+                            </template>
+                        </header>
+
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <!-- Vista -->
+                            <template if:true={isReadOnlyModal}>
+                                <div class="readonly-content" lwc:dom="manual"></div>
+                            </template>
+
+                            <!-- Edición -->
+                            <template if:false={isReadOnlyModal}>
+                                <div class="editable-content" lwc:dom="manual"></div>
+                            </template>
+                        </div>
+
+                        <footer class="slds-modal__footer">
+                            <lightning-button label="Cerrar" onclick={closeModal}></lightning-button>
+                            <template if:false={isReadOnlyModal}>
+                                <lightning-button label="Guardar" variant="brand" onclick={saveModalContent}></lightning-button>
+                            </template>
+                        </footer>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+        </div>
+    </section>
+</template>

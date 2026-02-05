@@ -1,0 +1,40 @@
+<template>
+  <section class="slds-section slds-is-open">
+    <template if:true={title}>
+      <button
+        class="slds-section__title slds-button slds-button_reset"
+        onclick={toggleSection} style="width:100%; display:block; margin-bottom: 1rem;">
+        <span class="slds-section__title-action">
+          <lightning-icon
+            icon-name={iconName}
+            size="xx-small"
+            class="slds-section__title-action-icon slds-button__icon_left">
+          </lightning-icon>
+          <h3 class="slds-truncate" title={title}>{title}</h3>
+        </span>
+      </button>
+    </template>
+
+    <div class="slds-section__content" if:true={isOpen}>
+      <template if:true={showAddButton}>
+        <lightning-button
+          label="Agregar fila"
+          onclick={handleAddRow}
+          variant="brand"
+          class="slds-m-bottom_small">
+        </lightning-button>
+      </template>
+
+      <lightning-datatable
+        key-field="Id"
+        data={data}
+        columns={columns}
+        draft-values={draftValues}
+        onsave={handleSave}
+        onrowaction={handleRowAction}
+        onrowselection={handleRowSelection}
+        hide-checkbox-column={hideCheckboxColumn}>
+      </lightning-datatable>
+    </div>
+  </section>
+</template>

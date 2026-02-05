@@ -1,0 +1,8 @@
+projectPath: ./dataPack
+maxDeph: 0
+manifest:
+- IntegrationProcedure/Slip_ObtenerSlipConfig
+- IntegrationProcedure/Slip_ObtenerSlip
+- IntegrationProcedure/Slip_ActualizarSlip
+- IntegrationProcedure/Slip_ObtenerCoberturas
+
