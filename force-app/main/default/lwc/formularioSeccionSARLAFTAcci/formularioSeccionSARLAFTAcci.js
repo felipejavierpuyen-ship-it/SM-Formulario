@@ -1,94 +1,85 @@
-import { LightningElement, api, wire } from 'lwc';
-import getAccionistas from '@salesforce/apex/WizardArriendosController.getPartPolizaAccionistas';
+import { LightningElement, api, wire, track } from 'lwc';
+import { refreshApex } from '@salesforce/apex';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getShareholders from '@salesforce/apex/WizardArriendosController.getShareholders';
+const COLUMNS = [
+    {   label: 'Nombre del Cliente', fieldName: 'Nombre_del_Cliente__c', 
+        type: 'text', initialWidth: 230
+    },
+    {   label: 'Tipo de documento', fieldName: 'Tipo_de_Documento__c',
+        type: 'text', initialWidth: 150 
+    },
+    {   label: 'Nro documento', fieldName: 'Cedula_o_NIT__c',
+        type: 'text', initialWidth: 150 
+    },
+    {   label: '% de Participación', fieldName: 'de_Participacion__c',
+        type: 'percent', initialWidth: 150, typeAttributes: {
+            minimumFractionDigits: '2',
+            maximumFractionDigits: '2'
+        }, cellAttributes: { alignment: 'left' }
+    },
+    {   label: '¿Cotiza en bolsa?', fieldName: 'Cotiza_en_bolsa__c', 
+        type: 'text', initialWidth: 140
+    },
+    {   label: '¿Es PEP?', fieldName: 'Es_PEP__c', 
+        type: 'text', initialWidth: 100
+    },
+    {   label: '¿Tributa en otro país?', fieldName: 'Tributa_en_otro_pais__c', 
+        type: 'text', initialWidth: 140
+    }
+];
 
 export default class FormularioSeccionSARLAFTAcci extends LightningElement {
-    //@track shareholders = [{ id: 1, tipoDocumento: '', numeroDocumento: '', nombreCompleto: '', participacion: '', cotizaEnBolsa: 'No', esPEP: 'No', tributaOtroPais: 'No' }];
     @api recordId;
-    shareholders = [];
-    nextShareholderId = 1;
+    @track data = [];
+    columns = COLUMNS;
+    isModalOpen = false;
+    wiredResult;
 
-    yesNoOptions = [
-        { label: 'Sí', value: 'Si' },
-        { label: 'No', value: 'No' }
-    ];
-
-    documentTypeOptions = [
-        { label: 'Cédula de Ciudadanía', value: 'Cédula de ciudadanía' },
-        { label: 'NIT', value: 'NIT' },
-        { label: 'Cédula de Extranjería', value: 'Cédula Extranjería' }
-    ];
-
-    connectedCallback() {
-        console.log('revisar recordId: '+this.recordId);
-        if (this.recordId) {
-            this.loadShareholders();
+    // Wire reactivo: se dispara cuando recordId tiene valor
+    @wire(getShareholders, { caseId: '$recordId' })
+    wiredShareholders(result) {
+        this.wiredResult = result; 
+        if (result.data) {
+            // Transformamos los datos antes de asignarlos a this.data
+            this.data = result.data.map(item => {
+                return {
+                    ...item,
+                    de_Participacion__c: item.de_Participacion__c ? item.de_Participacion__c / 100 : 0
+                };
+            });
+        } else if (result.error) {
+            this.showToast('Error', 'No se pudieron cargar los socios', 'error');
         }
     }
 
-    async loadShareholders() {
-        try {
-            const result = await getAccionistas({ caseId: this.recordId });
-            if (result && result.length > 0) {
-                console.log('revisar: '+ result);
-                this.shareholders = result.map((record, index) => ({
-                    id: index + 1,
-                    tipoDocumento: record.Tipo_de_Documento__c,
-                    numeroDocumento: record.Cedula_o_NIT__c
-                    /*nombreCompleto: record.NombreCompleto__c,
-                    participacion: record.Participacion__c,
-                    cotizaEnBolsa: record.CotizaEnBolsa__c ? 'Si' : 'No',
-                    esPEP: record.EsPEP__c ? 'Si' : 'No',
-                    tributaOtroPais: record.TributaOtroPais__c ? 'Si' : 'No'*/
-                }));
-                this.nextShareholderId = this.shareholders.length + 1;
-            } else {
-                this.addEmptyRow();
-            }
-        } catch (error) {
-            console.error('Error al cargar accionistas', error);
-            this.addEmptyRow();
-        }
+    // Getter para ocultar/mostrar tabla
+    get hasRecords() {
+        return this.data && this.data.length > 0;
     }
 
-    addEmptyRow() {
-        this.shareholders = [{
-            id: 1,
-            tipoDocumento: '',
-            numeroDocumento: '',
-            nombreCompleto: '',
-            participacion: '',
-            cotizaEnBolsa: 'NO',
-            esPEP: 'NO',
-            tributaOtroPais: 'NO'
-        }];
-        this.nextShareholderId = 2;
+    openModal() {
+        this.isModalOpen = true;
     }
 
-    addShareholder(){
-        this.shareholders = [...this.shareholders, {
-            id: this.nextShareholderId++,
-            tipoDocumento: '',
-            numeroDocumento: '',
-            nombreCompleto: '',
-            participacion: '',
-            cotizaEnBolsa: 'No',
-            esPEP: 'No',
-            tributaOtroPais: 'No'
-        }];
+    closeModal() {
+        this.isModalOpen = false;
     }
 
-    handleShareholderChange(event) {
-        const id = event.target.dataset.id;
-        const field = event.target.dataset.field;
-        const value = event.target.type === 'checkbox' ? event.target.checked : event.detail.value;
+    handleSuccess(event) {
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Éxito',
+                message: 'Registro creado correctamente',
+                variant: 'success'
+            })
+        );
+        this.closeModal();
+        return refreshApex(this.wiredRecordsResult); // Refresca la tabla automáticamente
+    }
 
-        this.shareholders = this.shareholders.map(sh => {
-            if (sh.id == id) {
-                return { ...sh, [field]: value };
-            }
-            return sh;
-        });
-        this.notifyDataChange();
+    showToast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
 
     notifyDataChange() {
