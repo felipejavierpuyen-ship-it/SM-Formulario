@@ -11,23 +11,47 @@
             </ul>
         </div>
 
+        <template if:true={statusMessage.visible}>
+            <div class="slds-m-bottom_small">
+                <div class={statusMessage.variant} role="status">
+                    <div class="slds-scoped-notification slds-media slds-media_center">
+                        <div class="slds-media__figure">
+                            <lightning-icon icon-name="utility:info" variant="inverse" size="small"></lightning-icon>
+                        </div>
+                        <div class="slds-media__body">
+                            <p>{statusMessage.text}</p>
+                        </div>
+                        <div class="slds-media__figure">
+                            <button class="slds-button slds-button_icon slds-button_icon-inverse" title="Cerrar"
+                                onclick={hideStatus}>
+                                <lightning-icon icon-name="utility:close" size="xx-small"
+                                    variant="inverse"></lightning-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
 
-        <lightning-card title="Gestión de Registros" icon-name="standard:contact">
+        <lightning-card title="Listado de accionistas" icon-name="custom:custom15">
             <div slot="actions">
-                <lightning-button label="Nuevo Registro" onclick={openModal} variant="brand"></lightning-button>
+                <lightning-button label="Agregar Accionista" icon-name="utility:add" onclick={openModal}
+                    variant="brand"></lightning-button>
             </div>
 
             <div class="slds-p-around_medium">
                 <template if:true={hasRecords}>
                     <div>
-                        <lightning-datatable key-field="Id" data={data} columns={columns} hide-checkbox-column show-row-number-column>
+                        <lightning-datatable key-field="Id" data={shareholders} columns={columns} hide-checkbox-column
+                            show-row-number-column>
                         </lightning-datatable>
                     </div>
                 </template>
 
                 <template if:false={hasRecords}>
-                    <div class="slds-text-align_center slds-p-vertical_large">
-                        <p>No se encontraron registros para mostrar.</p>
+                    <div class="slds-text-align_center slds-p-vertical_large slds-box slds-theme_alert-texture">
+                        <h3 class="slds-text-heading_medium">Sin accionistas</h3>
+                        <p>Haz clic en "Agregar Accionista" para empezar.</p>
                     </div>
                 </template>
             </div>
@@ -44,22 +68,56 @@
                         <h2 class="slds-text-heading_medium">Crear Nuevo Registro</h2>
                     </header>
 
-                    <div class="slds-modal__content slds-p-around_medium">
-                        <lightning-record-edit-form object-api-name="Participante_de_Poliza__c" onsuccess={handleSuccess}>
-
+                    <div class="slds-modal__content slds-p-around_medium slds-is-relative">
+                        <template if:true={isLoading}>
+                            <lightning-spinner alternative-text="Guardando..." size="medium" variant="brand">
+                            </lightning-spinner>
+                        </template>
+                        <lightning-record-edit-form object-api-name="Participante_de_Poliza__c"
+                            onsuccess={handleSuccess} onsubmit={handleSubmit} onerror={handleError}>
                             <lightning-messages></lightning-messages>
 
-                            <lightning-input-field field-name="Caso_Relacionado__c" value={recordId} class="slds-hide"></lightning-input-field>
+                            <div class="slds-grid slds-wrap">
+                                <div class="slds-col slds-size_1-of-1 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Nombre_del_Cliente__c" required></lightning-input-field>
+                                </div>
 
-                            <lightning-input-field field-name="Nombre_del_Cliente__c" required></lightning-input-field>
-                            <lightning-input-field field-name="Tipo_de_Documento__c" required></lightning-input-field>
-                            <lightning-input-field field-name="Cedula_o_NIT__c"></lightning-input-field>
-                            <lightning-input-field field-name="de_Participacion__c"></lightning-input-field>
-                            <lightning-input-field field-name="Cotiza_en_bolsa__c"></lightning-input-field>
-                            <lightning-input-field field-name="Es_PEP__c"></lightning-input-field>
-                            <lightning-input-field field-name="Tributa_en_otro_pais__c"></lightning-input-field>
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Tipo_de_Documento__c" required></lightning-input-field>
+                                </div>
 
-                            <div class="slds-m-top_medium slds-text-align_right">
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Cedula_o_NIT__c"
+                                        required></lightning-input-field>
+                                </div>
+
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="de_Participacion__c"
+                                        required></lightning-input-field>
+                                </div>
+
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Cotiza_en_bolsa__c"
+                                        required></lightning-input-field>
+                                </div>
+
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Es_PEP__c" required></lightning-input-field>
+                                </div>
+
+                                <div
+                                    class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_x-small">
+                                    <lightning-input-field field-name="Tributa_en_otro_pais__c"
+                                        required></lightning-input-field>
+                                </div>
+                            </div>
+
+                            <div class="slds-m-top_medium slds-text-align_center">
                                 <lightning-button label="Cancelar" onclick={closeModal}
                                     class="slds-m-right_small"></lightning-button>
                                 <lightning-button type="submit" variant="brand" label="Guardar"></lightning-button>
@@ -70,79 +128,6 @@
             </section>
             <div class="slds-backdrop slds-backdrop_open"></div>
         </template>
-
-        <!-- Scroll horizontal -->
-        <!-- Div externo solo para scroll -->
-        <!--<div class="scroll-container">
-
-            <div class="tabla-wrapper">
-                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
-                    <thead>
-                        <tr class="slds-line-height_reset">
-                            <th style="width: 50px;">#</th>
-                            <th style="width: 200px;">Tipo Doc.</th>
-                            <th style="width: 150px;">Identificación</th>
-                            <th style="width: 250px;">Nombre Completo</th>
-                            <th style="width: 100px;">% Part.</th>
-                            <th style="width: 120px;">Cotiza Bolsa?</th>
-                            <th style="width: 100px;">PEP?</th>
-                            <th style="width: 120px;">Tributa Exterior?</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template for:each={shareholders} for:item="sh">
-                            <tr key={sh.id}>
-                                <td>{sh.id}</td>
-                                <td class="combobox-cell">
-                                    <lightning-combobox variant="label-hidden" options={documentTypeOptions}
-                                        value={sh.tipoDocumento} onchange={handleShareholderChange} data-id={sh.id}
-                                        data-field="tipoDocumento">
-                                    </lightning-combobox>
-                                </td>
-                                <td>
-                                    <lightning-input variant="label-hidden" value={sh.numeroDocumento}
-                                        onchange={handleShareholderChange} data-id={sh.id} data-field="numeroDocumento">
-                                    </lightning-input>
-                                </td>
-                                <td>
-                                    <lightning-input variant="label-hidden" value={sh.nombreCompleto}
-                                        onchange={handleShareholderChange} data-id={sh.id} data-field="nombreCompleto">
-                                    </lightning-input>
-                                </td>
-                                <td>
-                                    <lightning-input type="number" variant="label-hidden" value={sh.participacion}
-                                        onchange={handleShareholderChange} data-id={sh.id} data-field="participacion">
-                                    </lightning-input>
-                                </td>
-                                <td class="combobox-cell">
-                                    <lightning-combobox variant="label-hidden" options={yesNoOptions}
-                                        value={sh.cotizaEnBolsa} onchange={handleShareholderChange} data-id={sh.id}
-                                        data-field="cotizaEnBolsa">
-                                    </lightning-combobox>
-                                </td>
-                                <td class="combobox-cell">
-                                    <lightning-combobox variant="label-hidden" options={yesNoOptions} value={sh.esPEP}
-                                        onchange={handleShareholderChange} data-id={sh.id} data-field="esPEP">
-                                    </lightning-combobox>
-                                </td>
-                                <td class="combobox-cell">
-                                    <lightning-combobox variant="label-hidden" options={yesNoOptions}
-                                        value={sh.tributaOtroPais} onchange={handleShareholderChange} data-id={sh.id}
-                                        data-field="tributaOtroPais">
-                                    </lightning-combobox>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    -->
-
-        <div class="slds-m-top_medium">
-            <lightning-button label="Agregar Accionista" icon-name="utility:add"
-                onclick={addShareholder}></lightning-button>
-        </div>
 
         <div class="slds-grid slds-grid_align-center slds-p-top_large">
             <lightning-button label="Atrás" onclick={handlePrevious} class="slds-m-right_x-small"></lightning-button>

@@ -1,61 +1,95 @@
 import { LightningElement, api, wire, track } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { CurrentPageReference } from 'lightning/navigation';
 import getShareholders from '@salesforce/apex/WizardArriendosController.getShareholders';
+import createShareholder from '@salesforce/apex/WizardArriendosController.createShareholder';
 const COLUMNS = [
-    {   label: 'Nombre del Cliente', fieldName: 'Nombre_del_Cliente__c', 
+    {
+        label: 'Nombre del Cliente', fieldName: 'Nombre_del_Cliente__c',
         type: 'text', initialWidth: 230
     },
-    {   label: 'Tipo de documento', fieldName: 'Tipo_de_Documento__c',
-        type: 'text', initialWidth: 150 
+    {
+        label: 'Tipo de documento', fieldName: 'Tipo_de_Documento__c',
+        type: 'text', initialWidth: 150
     },
-    {   label: 'Nro documento', fieldName: 'Cedula_o_NIT__c',
-        type: 'text', initialWidth: 150 
+    {
+        label: 'Nro documento', fieldName: 'Cedula_o_NIT__c',
+        type: 'text', initialWidth: 150
     },
-    {   label: '% de Participación', fieldName: 'de_Participacion__c',
+    {
+        label: '% de Participación', fieldName: 'de_Participacion__c',
         type: 'percent', initialWidth: 150, typeAttributes: {
             minimumFractionDigits: '2',
             maximumFractionDigits: '2'
         }, cellAttributes: { alignment: 'left' }
     },
-    {   label: '¿Cotiza en bolsa?', fieldName: 'Cotiza_en_bolsa__c', 
+    {
+        label: '¿Cotiza en bolsa?', fieldName: 'Cotiza_en_bolsa__c',
         type: 'text', initialWidth: 140
     },
-    {   label: '¿Es PEP?', fieldName: 'Es_PEP__c', 
+    {
+        label: '¿Es PEP?', fieldName: 'Es_PEP__c',
         type: 'text', initialWidth: 100
     },
-    {   label: '¿Tributa en otro país?', fieldName: 'Tributa_en_otro_pais__c', 
+    {
+        label: '¿Tributa en otro país?', fieldName: 'Tributa_en_otro_pais__c',
         type: 'text', initialWidth: 140
     }
 ];
 
 export default class FormularioSeccionSARLAFTAcci extends LightningElement {
     @api recordId;
-    @track data = [];
+    @track shareholders = [];
+    @track statusMessage = { text: '', variant: '', visible: false };
     columns = COLUMNS;
-    isModalOpen = false;
+    @track isModalOpen = false;
+    @track isLoading = false;
     wiredResult;
 
-    // Wire reactivo: se dispara cuando recordId tiene valor
+    @wire(CurrentPageReference)
+    getStateParameters(pageRef) {
+        if (pageRef) {
+            const urlId = pageRef.state.recordId;
+            if (urlId) {
+                this.recordId = urlId;
+            }
+        }
+    }
+
     @wire(getShareholders, { caseId: '$recordId' })
     wiredShareholders(result) {
-        this.wiredResult = result; 
+        this.wiredResult = result;
         if (result.data) {
-            // Transformamos los datos antes de asignarlos a this.data
-            this.data = result.data.map(item => {
+            this.shareholders = result.data.map(item => {
                 return {
                     ...item,
                     de_Participacion__c: item.de_Participacion__c ? item.de_Participacion__c / 100 : 0
                 };
             });
         } else if (result.error) {
-            this.showToast('Error', 'No se pudieron cargar los socios', 'error');
+            this.showStatus('No se pudieron cargar los socios', 'error');
         }
+    }
+
+    // Método para mostrar el mensaje internamente
+    showStatus(text, variant) {
+        this.statusMessage = {
+            text: text,
+            variant: variant === 'success' ? 'slds-theme_success' : 'slds-theme_error',
+            visible: true
+        };
+        //Ocultar el mensaje después de 7 segundos
+        setTimeout(() => { this.statusMessage.visible = false; }, 7000);
+    }
+
+    // Para cerrar el mensaje manualmente con la "X"
+    hideStatus() {
+        this.statusMessage.visible = false;
     }
 
     // Getter para ocultar/mostrar tabla
     get hasRecords() {
-        return this.data && this.data.length > 0;
+        return this.shareholders && this.shareholders.length > 0;
     }
 
     openModal() {
@@ -66,21 +100,45 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
         this.isModalOpen = false;
     }
 
-    handleSuccess(event) {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Éxito',
-                message: 'Registro creado correctamente',
-                variant: 'success'
-            })
-        );
+    handleSuccess() {
+        this.isLoading = false;
+        this.showStatus('¡Accionista guardado exitosamente!', 'success');
         this.closeModal();
-        return refreshApex(this.wiredRecordsResult); // Refresca la tabla automáticamente
+        return refreshApex(this.wiredResult);
     }
 
-    showToast(title, message, variant) {
-        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    handleSubmit(event) {
+        event.preventDefault();
+        this.isLoading = true;
+
+        const fields = event.detail.fields;
+        
+        const fieldsToSend = {
+            ...fields,
+            Caso_Relacionado__c: this.recordId
+        };
+
+        createShareholder({ fieldsMap: fieldsToSend })
+            .then(() => {
+                this.handleSuccess();
+            })
+            .catch(error => {
+                this.handleError(error);
+            });
     }
+
+    handleError(error) {
+    this.isLoading = false;
+    const message = error.body ? error.body.message : 'Error desconocido';
+    const messagePanel = this.template.querySelector('lightning-messages');
+    if (messagePanel) {
+        messagePanel.setError(message); 
+    } else {
+        this.showStatus(message, 'error');
+    }
+
+    console.error('Error detallado de validación:', message);
+}
 
     notifyDataChange() {
         this.dispatchEvent(new CustomEvent('formdataupdate', {
@@ -93,6 +151,15 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
     }
 
     handleNext() {
+        if (!this.hasRecords) {
+            this.showStatus(
+                'Es obligatorio registrar al menos un accionista antes de continuar.',
+                'error'
+            );
+            return;
+        }
+        this.hideStatus();
+
         this.dispatchEvent(new CustomEvent('next', {
             detail: { data: { accionistas: this.shareholders } }
         }));
