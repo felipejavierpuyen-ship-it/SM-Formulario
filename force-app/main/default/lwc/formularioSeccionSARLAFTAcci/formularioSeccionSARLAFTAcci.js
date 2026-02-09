@@ -71,7 +71,6 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
         }
     }
 
-    // Método para mostrar el mensaje internamente
     showStatus(text, variant) {
         this.statusMessage = {
             text: text,
@@ -87,7 +86,6 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
         this.statusMessage.visible = false;
     }
 
-    // Getter para ocultar/mostrar tabla
     get hasRecords() {
         return this.shareholders && this.shareholders.length > 0;
     }
@@ -136,8 +134,6 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
     } else {
         this.showStatus(message, 'error');
     }
-
-    console.error('Error detallado de validación:', message);
 }
 
     notifyDataChange() {
@@ -151,13 +147,6 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
     }
 
     handleNext() {
-        if (!this.hasRecords) {
-            this.showStatus(
-                'Es obligatorio registrar al menos un accionista antes de continuar.',
-                'error'
-            );
-            return;
-        }
         this.hideStatus();
 
         this.dispatchEvent(new CustomEvent('next', {
