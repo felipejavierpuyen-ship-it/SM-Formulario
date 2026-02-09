@@ -3,9 +3,4 @@
     <apiVersion>59.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>SARLAFT Formulario</masterLabel>
-    <targets>
-        <target>lightning__AppPage</target>
-        <target>lightning__RecordPage</target>
-        <target>lightning__HomePage</target>
-    </targets>
 </LightningComponentBundle>

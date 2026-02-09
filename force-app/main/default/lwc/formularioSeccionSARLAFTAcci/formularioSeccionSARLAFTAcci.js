@@ -1,39 +1,38 @@
 import { LightningElement, api, wire, track } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
-import { CurrentPageReference } from 'lightning/navigation';
 import getShareholders from '@salesforce/apex/WizardArriendosController.getShareholders';
 import createShareholder from '@salesforce/apex/WizardArriendosController.createShareholder';
 const COLUMNS = [
     {
         label: 'Nombre del Cliente', fieldName: 'Nombre_del_Cliente__c',
-        type: 'text', initialWidth: 230
+        type: 'text'
     },
     {
         label: 'Tipo de documento', fieldName: 'Tipo_de_Documento__c',
-        type: 'text', initialWidth: 150
+        type: 'text'
     },
     {
         label: 'Nro documento', fieldName: 'Cedula_o_NIT__c',
-        type: 'text', initialWidth: 150
+        type: 'text'
     },
     {
         label: '% de Participación', fieldName: 'de_Participacion__c',
-        type: 'percent', initialWidth: 150, typeAttributes: {
+        type: 'percent', typeAttributes: {
             minimumFractionDigits: '2',
             maximumFractionDigits: '2'
         }, cellAttributes: { alignment: 'left' }
     },
     {
         label: '¿Cotiza en bolsa?', fieldName: 'Cotiza_en_bolsa__c',
-        type: 'text', initialWidth: 140
+        type: 'text'
     },
     {
         label: '¿Es PEP?', fieldName: 'Es_PEP__c',
-        type: 'text', initialWidth: 100
+        type: 'text'
     },
     {
         label: '¿Tributa en otro país?', fieldName: 'Tributa_en_otro_pais__c',
-        type: 'text', initialWidth: 140
+        type: 'text'
     }
 ];
 
@@ -45,16 +44,6 @@ export default class FormularioSeccionSARLAFTAcci extends LightningElement {
     @track isModalOpen = false;
     @track isLoading = false;
     wiredResult;
-
-    @wire(CurrentPageReference)
-    getStateParameters(pageRef) {
-        if (pageRef) {
-            const urlId = pageRef.state.recordId;
-            if (urlId) {
-                this.recordId = urlId;
-            }
-        }
-    }
 
     @wire(getShareholders, { caseId: '$recordId' })
     wiredShareholders(result) {
