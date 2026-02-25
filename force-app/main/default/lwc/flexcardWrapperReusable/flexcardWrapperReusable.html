@@ -3,7 +3,8 @@
     <template if:true={title}>
       <button
         class="slds-section__title slds-button slds-button_reset"
-        onclick={toggleSection} style="width:100%; display:block; margin-bottom: 1rem;">
+        onclick={toggleSection}
+        style="width:100%; display:block; margin-bottom: 1rem;">
         <span class="slds-section__title-action">
           <lightning-icon
             icon-name={iconName}
@@ -33,7 +34,8 @@
         onsave={handleSave}
         onrowaction={handleRowAction}
         onrowselection={handleRowSelection}
-        hide-checkbox-column={hideCheckboxColumn}>
+        hide-checkbox-column={hideCheckboxColumn}
+        selected-rows={selectedRowIds}>
       </lightning-datatable>
     </div>
   </section>

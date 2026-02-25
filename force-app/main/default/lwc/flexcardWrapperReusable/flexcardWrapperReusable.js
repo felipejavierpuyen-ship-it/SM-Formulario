@@ -1,4 +1,4 @@
-import { LightningElement, api, track, wire } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import { OmniscriptBaseMixin } from 'vlocity_ins/omniscriptBaseMixin';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -16,8 +16,10 @@ export default class FlexcardWrapperReusable extends OmniscriptBaseMixin(Lightni
 
   @track data = [];
   @track draftValues = [];
-  columns = [];
   @track isOpen = true;
+  @track selectedRowIds = [];
+
+  columns = [];
 
   get iconName() {
     return this.isOpen ? 'utility:switch' : 'utility:chevronright';
@@ -26,7 +28,6 @@ export default class FlexcardWrapperReusable extends OmniscriptBaseMixin(Lightni
   toggleSection() {
     this.isOpen = !this.isOpen;
   }
-  //test
 
 connectedCallback() {
   console.log('entro--', this.title, this.responseNode);
@@ -49,7 +50,6 @@ connectedCallback() {
               console.warn('Error al parsear AtributosAdicionales:', e);
             }
           }
-
           return cloned;
         })
         .sort((a, b) => {
@@ -59,7 +59,7 @@ connectedCallback() {
         })
     : [];
 
-  // Paso 3: Construir this.data con CATEGORIA después de NOMBRE
+  // Paso 3: Construir this.data con lógica de NOMBRE secuencial
   this.data = normalized.map((row, index) => {
     let idValue = row.Id || `row-${Date.now()}-${index}`;
     let nombreValue = row.NOMBRE;
@@ -92,7 +92,25 @@ connectedCallback() {
   // Paso 4: Generar columnas
   this.generateColumns();
 
-  // Paso 5: Aplicar respuesta si viene de catálogo
+  // Paso extra: inicializar IF_Seleccionado y selección visual
+  if (this.allowRowSelection) {
+    this.data = this.data.map(r => ({
+      ...r,
+      IF_Seleccionado: r.IF_Seleccionado === true ? true : false
+    }));
+
+    this.selectedRowIds = this.data
+      .filter(r => r.IF_Seleccionado)
+      .map(r => r.Id);
+
+    // Guardar todos al cargar con IF_Seleccionado
+    if (this.isFromProductCatalog) {
+      this.omniApplyCallResp({ [this.responseNode]: this.data });
+      this.callIntegrationProcedure(this.data);
+    }
+  }
+
+  // Paso 5: Aplicar respuesta si viene de catálogo y no hay selección de filas
   if (this.isFromProductCatalog && !this.allowRowSelection) {
     this.omniApplyCallResp({ [this.responseNode]: this.data });
     this.callIntegrationProcedure(this.data);
@@ -131,78 +149,84 @@ connectedCallback() {
         type: 'text'
       }));
 
-    this.columns.push({
-      type: 'button-icon',
-      fixedWidth: 40,
-      typeAttributes: {
-        iconName: 'utility:delete',
-        title: 'Eliminar',
-        name: 'delete',
-        variant: 'bare',
-        alternativeText: 'Eliminar'
+    this.columns.push(
+      {
+        type: 'button-icon',
+        fixedWidth: 40,
+        typeAttributes: {
+          iconName: 'utility:delete',
+          title: 'Eliminar',
+          name: 'delete',
+          variant: 'bare',
+          alternativeText: 'Eliminar'
+        },
+        cellAttributes: { alignment: 'center' }
       },
-      cellAttributes: { alignment: 'center' }
-    },
-    {
-      type: 'button-icon',
-      fixedWidth: 40,
-      typeAttributes: {
-        iconName: 'utility:up',
-        title: 'Mover Arriba',
-        name: 'moveUp',
-        variant: 'brand'
+      {
+        type: 'button-icon',
+        fixedWidth: 40,
+        typeAttributes: {
+          iconName: 'utility:up',
+          title: 'Mover Arriba',
+          name: 'moveUp',
+          variant: 'brand'
+        }
+      },
+      {
+        type: 'button-icon',
+        fixedWidth: 40,
+        typeAttributes: {
+          iconName: 'utility:down',
+          title: 'Mover Abajo',
+          name: 'moveDown',
+          variant: 'base'
+        }
       }
-    },
-    {
-      type: 'button-icon',
-      fixedWidth: 40,
-      typeAttributes: {
-        iconName: 'utility:down',
-        title: 'Mover Abajo',
-        name: 'moveDown',
-        variant: 'base'
-      }
-    });
+    );
   }
 
   handleAddRow() {
-    if (!this.columns.length) return;
+  if (!this.columns.length) return;
 
-    const newRow = {};
-    this.columns.forEach(col => {
-      if (col.fieldName !== 'deleteRow') {
-        newRow[col.fieldName] = '';
-      }
-    });
-
-    newRow.Id = `row-${Date.now()}`;
-    newRow.NOMBRE = this.generateNextName();
-    let formattedRow = {};
-
-    if(this.responseNode == 'Coberturas'){
-      formattedRow = {
-        Id: newRow.Id,
-        NOMBRE: newRow.NOMBRE,
-        EsOpcional: false,
-        ...Object.fromEntries(
-          Object.entries(newRow).filter(([key]) => key !== 'Id' && key !== 'NOMBRE')
-        )
-      };
-    } else {
-      formattedRow = {
-        Id: newRow.Id,
-        NOMBRE: newRow.NOMBRE,
-        ...Object.fromEntries(
-          Object.entries(newRow).filter(([key]) => key !== 'Id' && key !== 'NOMBRE')
-        )
-      };
+  const newRow = {};
+  this.columns.forEach(col => {
+    if (col.fieldName !== 'deleteRow') {
+      newRow[col.fieldName] = '';
     }
-    
+  });
 
-    this.data = [...this.data, formattedRow];
-    //this.omniApplyCallResp({ [this.responseNode]: this.data });
-    //this.callIntegrationProcedure(this.data);
+  const totalRows = this.data.length;
+  newRow.Id = `row-${Date.now()}`;
+
+  let nombreValue;
+  if (this.allowRowSelection) {
+    // Nuevo nombre por defecto: Cobertura n
+    nombreValue = `Cobertura ${totalRows + 1}`;
+  } else {
+    // Lógica original
+    nombreValue = this.generateNextName();
   }
+
+  let formattedRow = {
+    Id: newRow.Id,
+    NOMBRE: nombreValue,
+    ...Object.fromEntries(
+      Object.entries(newRow).filter(([key]) => key !== 'Id' && key !== 'NOMBRE')
+    )
+  };
+
+  // Si selección está habilitada → EsOpcional = true y IF_Seleccionado = false
+  if (this.allowRowSelection) {
+    formattedRow.EsOpcional = true;
+    formattedRow.IF_Seleccionado = false;
+  } else if (this.responseNode === 'Coberturas') {
+    // Lógica original para Coberturas sin selección
+    formattedRow.EsOpcional = false;
+  }
+
+  this.data = [...this.data, formattedRow];
+
+}
 
   generateNextName() {
     if (!this.data.length) return 'Opción 1';
@@ -243,11 +267,13 @@ connectedCallback() {
     this.omniRemoteCall(ipConfig, true)
       .then(response => {
         console.log('Integration Procedure ejecutado:', response);
-        this.dispatchEvent(new ShowToastEvent({
-                    title: 'Slip actualizado',
-                    message: '',
-                    variant: 'success'
-                }));
+        this.dispatchEvent(
+          new ShowToastEvent({
+            title: 'Slip actualizado',
+            message: '',
+            variant: 'success'
+          })
+        );
       })
       .catch(error => {
         console.error('Error al ejecutar IP:', error);
@@ -273,36 +299,44 @@ connectedCallback() {
     const rowId = event.detail.row.Id;
     const actionName = event.detail.action.name;
 
-    if(actionName == 'delete'){
+    if (actionName === 'delete') {
       this.data = this.data.filter(row => row.Id !== rowId);
-    }
-    else if(actionName === 'moveUp' || actionName === 'moveDown'){
-      // Copia del array actual de registros
+    } else if (actionName === 'moveUp' || actionName === 'moveDown') {
       let newData = [...this.data];
-
-      // Ubicamos el índice de la fila seleccionada
       const index = newData.findIndex(row => row.Id === rowId);
 
-      if(actionName === 'moveUp' && index > 0){
-        // Intercambiar el elemento actual con el de arriba
+      if (actionName === 'moveUp' && index > 0) {
         [newData[index - 1], newData[index]] = [newData[index], newData[index - 1]];
         this.data = newData;
-      }else if(actionName === 'moveDown' && index < newData.length - 1){
-        // Intercambiar el elemento actual con el de abajo
+      } else if (actionName === 'moveDown' && index < newData.length - 1) {
         [newData[index + 1], newData[index]] = [newData[index], newData[index + 1]];
         this.data = newData;
-      }      
+      }
     }
-    
+
     this.omniApplyCallResp({ [this.responseNode]: this.data });
     this.callIntegrationProcedure(this.data);
   }
 
   handleRowSelection(event) {
-    const selectedIds = new Set(event.detail.selectedRows.map(r => r.Id));
-    const selectedRows = this.data.filter(row => selectedIds.has(row.Id));
-    this.omniApplyCallResp({ [this.responseNode]: selectedRows });
-    this.callIntegrationProcedure(selectedRows);
-  }
+    // Si no está habilitada la selección, no alteramos el comportamiento
+    if (!this.allowRowSelection) {
+      return;
+    }
 
+    const selectedIds = new Set(event.detail.selectedRows.map(r => r.Id));
+
+    // Construir array completo con IF_Seleccionado para cada registro
+    const updatedData = this.data.map(row => ({
+      ...row,
+      IF_Seleccionado: selectedIds.has(row.Id)
+    }));
+
+    // Actualizar selección visual (por si algún otro flujo depende de ello)
+    this.selectedRowIds = [...selectedIds];
+
+    // Enviar todo el array con el nodo IF_Seleccionado
+    this.omniApplyCallResp({ [this.responseNode]: updatedData });
+    this.callIntegrationProcedure(updatedData);
+  }
 }
