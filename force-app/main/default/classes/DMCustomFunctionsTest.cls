@@ -69,7 +69,6 @@ private class DMCustomFunctionsTest {
             Indica_si_se_valida_la_prima_minima__c = true,
             Numero_de_articulos_en_el_inventario__c = 0,
             Numero_de_servicios_publicos__c = 0,
-            Punto_de_venta__c = '0',
             Participacion_intermediario__c = 100,
             Renovacion_automatica__c = true,
             Tasa_de_cambio__c = 1,
@@ -235,7 +234,7 @@ private class DMCustomFunctionsTest {
         Test.stopTest();
 
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) outputMap.get('result');
-        // Debería haber 4 roles por el Participante: AFIANZADO, INQUILINO, ARRENDATARIO y TOMADOR (porque EsTomador__c = true)
+        // Debería haber 4 roles por el Participante: (porque EsTomador__c = true)
         System.assertEquals(4, resultList.size(), 'Se esperaban 4 roles para el participante configurado');
     }
 

@@ -1,16 +1,16 @@
 global with sharing class DMCustomFunctions implements Callable {
-
-    /*
-     * input  - arguments - List<Object> of arguments passed to the function
-     * output - result    - The function supports single Object values, List<Object>,
-     * or Map<String, Object>
-     */
+/*
+* input  - arguments - List<Object> of arguments passed to the function
+* output - result    - The function supports single Object values, List<Object>,
+* or Map<String, Object>
+*/
     private static final Integer COD_TEL_PRINCIPAL = 8;
     private static final Integer COD_EMAIL_PRINCIPAL = 10;
     private static final Map<String, String> PARTICIPANT_ROLE_MAP = new Map<String, String>{
         'Propietario' => 'ASEGURADO',
-        'Deudor'      => 'AFIANZADO',
-        'Inquilino'   => 'INQUILINO' };
+        'Deudor'      => 'DEUDOR',
+        'Inquilino'   => 'INQUILINO'
+        };
 	private static final Map<String, Integer> DOC_TYPE_MAP = new Map<String, Integer>{
         'Cédula de ciudadanía'            => 1,
         'NIT'                             => 3,
@@ -96,34 +96,34 @@ global with sharing class DMCustomFunctions implements Callable {
     private List<Map<String, Object>> mapRoles(List<Participante_de_Poliza__c> lstPart, Slip__c slip){
         List<Map<String, Object>> rolesFinalList = new List<Map<String, Object>>();
         Boolean limiteTomadorAlcanzado = false;
-        Integer afianzadoCounter = 0;
+        Integer posicionDeudor = 0;
         
         for(Participante_de_Poliza__c ppRecord : lstPart) {
             if(ppRecord.Cliente__c != null){
                 Map<String, Object> baseMap = formatPartPoliz(ppRecord, slip);
-                if(baseMap.get('rol') == 'AFIANZADO') {
-                    afianzadoCounter++;
-                    baseMap.put('posicion', afianzadoCounter);
+                String currentRol = (String)baseMap.get('rol');
+                if(currentRol == 'DEUDOR') {
+                    posicionDeudor++;
+                    baseMap.put('posicion', posicionDeudor);
                 }
-                
                 rolesFinalList.add(baseMap);
                 
-                if(ppRecord.EsTomador__c){
-                    // EQUIVALENTE A 'ParticipanteArrendatario': SIN LIMIT, Todos con EsTomador__c = TRUE
-                    Map<String, Object> arrendatarioMap = baseMap.clone(); 
-                    arrendatarioMap.put('rol', 'ARRENDATARIO');
-                    arrendatarioMap.remove('posicion');
-                    rolesFinalList.add(arrendatarioMap);
+                // Si el rol es INQUILINO, creamos la estructura extra para AFIANZADO
+                if(currentRol == 'INQUILINO') {
+                    Map<String, Object> afianzadoMap = baseMap.clone();
+                    afianzadoMap.put('rol', 'AFIANZADO');
+                    rolesFinalList.add(afianzadoMap);
+                }
+                
+                // EQUIVALENTE A 'ParticipanteTomador': CON LIMIT 1
+                // Solo se agrega una vez en todo el proceso
+                if(ppRecord.EsTomador__c && !limiteTomadorAlcanzado){                    
+                    Map<String, Object> tomadorMap = baseMap.clone();
+                    tomadorMap.put('rol', 'TOMADOR');
+                    tomadorMap.remove('posicion');
                     
-                    // EQUIVALENTE A 'ParticipanteTomador': CON LIMIT 1
-                    // Solo se agrega una vez en todo el proceso
-                    if(!limiteTomadorAlcanzado) {
-                        Map<String, Object> tomadorMap = baseMap.clone();
-                        tomadorMap.put('rol', 'TOMADOR');
-                        tomadorMap.remove('posicion');
-                        rolesFinalList.add(tomadorMap);
-                        limiteTomadorAlcanzado = true; // Simula el LIMIT 1 del Data Mapper
-                    }
+                    rolesFinalList.add(tomadorMap);
+                    limiteTomadorAlcanzado = true; // Simula el LIMIT 1 del Data Mapper
                 }
             }
         }
