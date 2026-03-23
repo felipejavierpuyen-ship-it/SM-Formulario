@@ -6,16 +6,13 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
         Map<String, Object> options
     ) {
         // Initialize success status
-        system.debug(method);
-        system.debug(input);
         if (method == 'uploadFile') {
-            // Extract parentProductId from the input map
+            // Extract values from the input map
+            String token = (String) input.get('Token');
             String caseId = (String) input.get('CaseId');
             String idTransaccion = (String) input.get('IdTransaccion');
-            String roles = (String) input.get('Roles');
-
-            // Call the helper method to get the child product attributes
-            uploadFile(caseId, idTransaccion, roles, outMap);
+            
+            uploadFile(token, caseId, idTransaccion, outMap);
             return outMap;
         }
         return null;
@@ -53,9 +50,7 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
         }
     }
     
-    public static void uploadFile(String caseId, String idTransaccion, String roles, Map<String, Object> outMap) {
-        //caseId = '500Ek00000eFyb9IAC';
-        //idTransaccion = '60b50f7c-d795-4453-bf23-f9db44d1be2d';
+    public static void uploadFile(String token, String caseId, String idTransaccion, Map<String, Object> outMap) {
         Case cs = [SELECT Id, CaseNumber FROM Case WHERE Id =: caseId];
         List<ContentDocumentLink> lstCDL = [SELECT Id, LinkedEntityId, ContentDocumentId 
                                             FROM ContentDocumentLink 
@@ -71,18 +66,16 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
                                        WHERE Id IN: lstCDId
                                        AND Title =: pdfName
                                        ORDER BY CreatedDate DESC];
-        
         if(lstCD.size() > 0){
             ContentVersion recordAttachment = [SELECT Id, VersionData, Title 
                                                FROM ContentVersion 
-                                               WHERE ID =: lstCD[0].ParentId
+                                               WHERE ID =: lstCD[0].LatestPublishedVersionId
                                                ORDER BY CreatedDate DESC];
             String fileName = pdfName + '.pdf';
             Blob fileBlob = recordAttachment.VersionData;
             
             Blob bodyBlob = formatBlob(idTransaccion, fileName, fileBlob);
             
-            String token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI1IiwianRpIjoiZjhlMzdlNjY2MWUzYjQzM2IzMWMwZjBkMDg5Y2MzNmRhNDllNGVlNDVjY2RiYWU1Y2I0MzkxYzM1NmU3MmY5Nzk3ZGEzYmVmMjAzNGFjMmYiLCJpYXQiOjE3NzM3ODQ1NjguNTk5OTU1LCJuYmYiOjE3NzM3ODQ1NjguNTk5OTU4LCJleHAiOjE4MDUzMjA1NjguNTkyNzcxLCJzdWIiOiJkZjBiODgwNy1kYWI3LTRhMWMtOWU4OS1mMWFmNWY1NmY4ODkiLCJzY29wZXMiOltdfQ.O4jz3cNDjGm_qjtKx9DHq1OPE_TfPavNJ2y4ekph2GCx3f5q8iI_m8q6dqxgzNXpKiH4y0qcXgTkJQq2_4fMvJQn8ocMw_aTrdfPLbesOY5YXrScx0ssWXEUkcHMEz47ibxuKuUwP6I93BWJtQ1sAa--1AT-Uwzs8Z8VA-UfSBg-VQUfhfGkFzF90MvPGokI1NPSLbVj74l8im-bx9DL8eC-yCKiLCpthCaUm7_GyIhhMvtYz0y722xHRPZuy86iA7AnAB_U5XlM9qaP7hRkOgdcziqsPD7v4SND1AgWT7NHecoseQTuJarOKrMmM4sbS-SF1wWQRU1VD62KlzBaKvNr41yabJ16vQhyjtr79bgwJwpklfq_t3UwvjPENWusOfa3VrjPvueIedG1c3lxSPjSvzqfmOjkXK-JXhc5Rn1eo9zfI8TpbyM1_HyXdk6NeKJ4aLVe7VbgxICXPwNorrQW1zNdGVkgdD_cmdAKBODD4FEIhLSNBIeTWuexqpW4JxsHklL7sLuJM5maS33rIYleUcbzl-C-HMbuSCyMIeyjkzjJvYfYal7r6C07f-gi6krrFPj1pu7GXVjlcSwiKesJ3zlmBeA9k5bq1d_jNvZiK7j47vFkyVUOi91KSe8X46aXDjgq78XmzVew6tYbm_InrHkX4vPZ_OBOMb4U84k';
             // 5. Configurar la petición HTTP
             Signio__c settings = Signio__c.getOrgDefaults();
             String endpoint = settings.Endpoint__c;
@@ -91,7 +84,7 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
                 HttpRequest req = new HttpRequest();
                 req.setEndpoint(endpoint + '/transacciones/cargar_documento');
                 req.setMethod('POST');
-                req.setHeader('Authorization', 'Bearer ' + token); // Reemplazar por token real
+                req.setHeader('Authorization', 'Bearer ' + token);
                 req.setHeader('Accept', 'application/json');
                 req.setHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
                 req.setBodyAsBlob(bodyBlob);
@@ -99,16 +92,24 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
                 
                 Http http = new Http();
                 HttpResponse res = http.send(req);
+                system.debug('Response: ' + res.getBody());
                 
+                SIGNIOResponse response = (SIGNIOResponse) JSON.deserialize(res.getBody(), SIGNIOResponse.class);
                 if (res.getStatusCode() == 200 || res.getStatusCode() == 201) {
-                    system.debug('Success: '+res.getBody());
-                    //outMap.put('Success', bodyBlob);
+                    outMap.put('success', true);
+                    outMap.put('id_documento', response.id_documento);
+                    outMap.put('message', response.mensaje);
                 } else {
-                    system.debug('Succrroress: '+res.getBody());
+                    outMap.put('success', false);
+                    outMap.put('message', 'Respuesta: ' + response.mensaje);
                 }
             } catch (Exception e) {
-                
+                outMap.put('success', false);
+                outMap.put('message', 'Ocurrió un error: ' + e.getMessage());
             }
+        }else{
+            outMap.put('success', false);
+            outMap.put('message', 'No se encontró el archivo correspondiente');
         }
     }
     
@@ -134,7 +135,6 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
         // Definir el Footer
         String footer = '\r\n--' + boundary + '--';
         
-        // lógica de codificación Base64 (Mantenida para integridad del PDF)
         String headerEncoded = EncodingUtil.base64Encode(Blob.valueOf(header));
         while(headerEncoded.endsWith('=')){
             header += ' ';
@@ -157,5 +157,11 @@ global without sharing class SIGNIOUploadFile_WS implements vlocity_ins.VlocityO
         }
         
         return bodyBlob;
+    }
+    
+    public class SIGNIOResponse {
+        public String codigo;
+        public String id_documento;
+        public String mensaje;
     }
 }
