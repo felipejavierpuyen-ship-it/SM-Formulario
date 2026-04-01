@@ -86,13 +86,13 @@ private class DMCustomFunctionsTest {
         Id personAccRT =  Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('PersonAccount').getRecordTypeId();
         // Person Account 1
         Account personAcc1 = new Account(
-            FirstName = 'Juan',
-            LastName = 'Perez',
-            PersonEmail = 'test@mail.com',
-            Phone = '300123',
+            FirstName = 'Felipe',
+            LastName = 'Javier',
+            PersonEmail = 'fpuyen@fastcloudconsulting.com',
+            Phone = '987654321',
             SM_Direccion__c = 'Carrera 1',
             SM_Ciudad__c = ciudad.Id,
-            SM_CorreoElectronico__c = 'segurosmundial@colombia.com',
+            SM_CorreoElectronico__c = 'fpuyen@fastcloudconsulting.com',
             RecordTypeId = personAccRT
         );
         insert personAcc1;
@@ -112,11 +112,11 @@ private class DMCustomFunctionsTest {
         Account personAcc2 = new Account(
             FirstName = 'Felipe',
             LastName = 'Puyen',
-            PersonEmail = 'felipejavierpuyen@gmail.com',
-            Phone = '+51957547079',
+            PersonEmail = 'fpuyen2@fastcloudconsulting.com',
+            Phone = '987654321',
             SM_Direccion__c = 'Carrera 4',
             SM_Ciudad__c = ciudad.Id,
-            SM_CorreoElectronico__c = 'felipejavierpuyen@gmail.com',
+            SM_CorreoElectronico__c = 'fpuyen@fastcloudconsulting.com',
             RecordTypeId = personAccRT
         );
         insert personAcc2;
@@ -271,5 +271,54 @@ private class DMCustomFunctionsTest {
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) outputMap.get('result');
         // Muestra los 4 roles, el catch controla el error
         System.assertEquals(4, resultList.size(), 'Se esperaban 4 roles para el participante configurado');
+    }
+    
+    @isTest
+    static void testFileExists() {
+        
+        
+        Case cs = [SELECT Id, CaseNumber FROM Case WHERE Subject = 'Caso Test Temporario'];
+        String expectedTitle = 'CONTRATO_' + cs.CaseNumber;
+        
+        ContentVersion cv = new ContentVersion(
+            Title = expectedTitle,
+            PathOnClient = 'Contrato.pdf',
+            VersionData = Blob.valueOf('Test Content'),
+            IsMajorVersion = true
+        );
+        insert cv;
+        
+        Id conDocId = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id].ContentDocumentId;
+        
+        ContentDocumentLink cdl = new ContentDocumentLink(
+            LinkedEntityId = cs.Id,
+            ContentDocumentId = conDocId,
+            ShareType = 'V'
+        );
+        insert cdl;
+        
+        DMCustomFunctions customFunc = new DMCustomFunctions();
+        List<Object> arguments = new List<Object>{
+            cs.Id
+        };
+        
+        Map<String, Object> inputMap = new Map<String, Object>{ 'arguments' => arguments };
+        Map<String, Object> outputMap = new Map<String, Object>();
+        Map<String, Object> optionsMap = new Map<String, Object>();
+        
+        Map<String, Object> args = new Map<String, Object>{
+            'input'   => inputMap,
+            'output'  => outputMap,
+            'options' => optionsMap
+        };
+
+        Test.startTest();
+        customFunc.call('fileExists', args);
+        Test.stopTest();
+
+        Map<String, Object> result = (Map<String, Object>) outputMap.get('result');
+        
+        // Al existir archivo es true
+        System.assertEquals(True, result.get('fileFound'), 'Se encontró uno o más archivos con el nombre correspondiente');
     }
 }

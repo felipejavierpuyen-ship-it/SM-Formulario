@@ -34,6 +34,9 @@ global with sharing class DMCustomFunctions implements Callable {
         }else if (methodName == 'getFormatParticipants') {
             List<Object> arguments = (List<Object>) inputs.get('arguments');
             output.put('result', getFormatParticipants(arguments));
+        }else if (methodName == 'fileExists') {
+            List<Object> arguments = (List<Object>) inputs.get('arguments');
+            output.put('result', fileExists(arguments));
         }
         
         return true;
@@ -62,6 +65,39 @@ global with sharing class DMCustomFunctions implements Callable {
             }
         }
         return resultList;
+    }
+    
+    private Map<String, Object> fileExists(List<Object> arguments) {
+        String caseId = String.valueOf(arguments[0]);
+        
+        Map<String, Object> result = new Map<String, Object>();
+        result.put('fileFound', false);
+        result.put('fileId', null);
+        
+        Case cs = [SELECT Id, CaseNumber FROM Case WHERE Id =: caseId];
+        String pdfName = 'CONTRATO_' + cs.CaseNumber;
+        
+        List<ContentDocumentLink> lstCDL = [SELECT Id, LinkedEntityId, ContentDocumentId 
+                                            FROM ContentDocumentLink 
+                                            WHERE LinkedEntityId =: caseId];
+        
+        if(!lstCDL.isEmpty()) {
+            List<Id> lstCDId = new List<Id>();
+            for(ContentDocumentLink cdl : lstCDL){
+                lstCDId.add(cdl.ContentDocumentId);
+            }
+            
+            List<ContentDocument> lstCD = [SELECT Id, Title, ParentId, LatestPublishedVersionId, CreatedDate
+                                           FROM ContentDocument
+                                           WHERE Id IN: lstCDId
+                                           AND Title =: pdfName
+                                           ORDER BY CreatedDate DESC];
+            if(lstCD.size() > 0){
+                result.put('fileFound', true);
+                result.put('fileId', lstCD[0].Id);
+            }
+        }
+        return result;
     }
 
     private List<Map<String, Object>> getFormatParticipants(List<Object> arguments) {
