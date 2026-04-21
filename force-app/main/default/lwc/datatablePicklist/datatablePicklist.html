@@ -1,0 +1,10 @@
+<template>
+    <select class="slds-select" style="height: 1.8rem;" onchange={handleChange}>
+        <option value="">{placeholder}</option>
+        <template for:each={processedOptions} for:item="opt">
+            <option key={opt.value} value={opt.value} selected={opt.isSelected}>
+                {opt.label}
+            </option>
+        </template>
+    </select>
+</template>

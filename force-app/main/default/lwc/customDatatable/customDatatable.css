@@ -1,0 +1,5 @@
+/* Esto obliga a la celda a mostrar lo que sobresalga (el picklist) */
+:host .slds-cell-fixed,
+:host td[role="gridcell"] {
+    overflow: visible !important;
+}

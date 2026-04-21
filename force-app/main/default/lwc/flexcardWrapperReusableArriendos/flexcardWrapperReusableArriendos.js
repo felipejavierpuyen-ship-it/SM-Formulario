@@ -14,6 +14,10 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
   @api areRecordsOptions = false;
   @api isFromProductCatalog = false;
 
+  //Add JR
+  @api fechaInicioGlobal;
+  @api fechaFinGlobal;
+
   /**
    * Field schema hardcoded.
    * Añadido: displayLabel para controlar la etiqueta visual de la columna.
@@ -34,11 +38,21 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
       displayLabel: 'Suma Asegurada',
       type: 'currency',
       typeAttributes: { currencyCode: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }
-    },
+    },    
     pjeContrato: { 
       displayLabel: 'Porcentaje Contrato',
-      type: 'number', 
-      typeAttributes: { minimumFractionDigits: 0, maximumFractionDigits: 0 } 
+      type: 'picklistType', 
+      // editable: true, <-- QUITA ESTO, causa el bloqueo del lapicito
+      typeAttributes: {
+          placeholder: 'Seleccione...',
+          options: [
+              { label: '$', value: 1 },
+              { label: '%', value: 100 },
+              { label: '%oo', value: 1000 }
+          ],
+          value: { fieldName: 'pjeContrato' },
+          context: { fieldName: 'Id' }
+      }
     },
     CodTipoPolizaSISE: { 
       type: 'number', 
@@ -136,6 +150,9 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
   connectedCallback() {
     const filtered = this.applyFilter(this.records, this.filterBy);
 
+    console.log('this.fechaInicioGlobal '+this.fechaInicioGlobal);
+    console.log('this.fechaFinGlobal '+this.fechaFinGlobal);
+
     const normalized = Array.isArray(filtered)
       ? filtered.map(row => {
           const cloned = { ...row };
@@ -198,6 +215,13 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
         } else if (schema.type === 'date') {
           normalizedRow[key] = this._toIsoDate(val);
         }
+        //Add JR Prediligenciamiento de las fechas
+        if (!normalizedRow.fecIniVigCober && this.fechaInicioGlobal) {
+            normalizedRow.fecIniVigCober = this._toIsoDate(this.fechaInicioGlobal);
+        }
+        if (!normalizedRow.fecFinVigCober && this.fechaFinGlobal) {
+            normalizedRow.fecFinVigCober = this._toIsoDate(this.fechaFinGlobal);
+        }
       });
 
       const { Id, NOMBRE, CATEGORIA, ...rest } = normalizedRow;
@@ -237,17 +261,21 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
 
   generateColumns() {
     const buildColFromKey = key => {
-      const schema = this.fieldSchema[key] || { type: 'text' };
-      const label = schema.displayLabel || (key === 'NOMBRE' ? 'Nombre' : key);
-      const col = {
-        label,
-        fieldName: key,
-        editable: true,
-        type: schema.type || 'text'
-      };
-      if (schema.typeAttributes) col.typeAttributes = { ...schema.typeAttributes };
-      if (['number', 'currency', 'percent'].includes(col.type)) col.cellAttributes = { alignment: 'right' };
-      return col;
+        const schema = this.fieldSchema[key] || { type: 'text' };
+        const label = schema.displayLabel || (key === 'NOMBRE' ? 'Nombre' : key);
+        
+        const col = {
+            label,
+            fieldName: key,
+            // Si el tipo es 'picklistType', NO debe ser editable:true 
+            // porque el picklist ya es interactivo por sí solo.
+            editable: schema.type === 'picklistType' ? false : true, 
+            type: schema.type || 'text'
+        };
+
+        if (schema.typeAttributes) col.typeAttributes = { ...schema.typeAttributes };
+        if (['number', 'currency', 'percent'].includes(col.type)) col.cellAttributes = { alignment: 'right' };
+        return col;
     };
 
     if (!this.data.length) {
@@ -335,6 +363,11 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
     const uniqueId = `row-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     newRow.Id = uniqueId;
     newRow.NOMBRE = this.generateNextName();
+    //Add JR Prediligenciamiento de las fechas
+    console.log('this.fechaInicioGlobal 2 '+this.fechaInicioGlobal);
+    console.log('this.fechaFinGlobal 2 '+this.fechaFinGlobal);
+    newRow.fecIniVigCober = this._toIsoDate(this.fechaInicioGlobal);
+    newRow.fecFinVigCober = this._toIsoDate(this.fechaFinGlobal);
 
     let formattedRow = {};
     if (this.responseNode === 'Coberturas') {
@@ -514,6 +547,27 @@ export default class FlexcardWrapperReusableArriendo extends OmniscriptBaseMixin
     // Persistir cambios en el IP (sin mostrar toast aquí)
     this.callIntegrationProcedure(payloadToSend);
   }
+
+handlePicklistChange(event) {
+    const { value, context } = event.detail;
+
+    // Convertimos a entero inmediatamente, el 10 es para asegurar base decimal
+    const numericValue = value ? parseInt(value, 10) : 0;
+    
+    // Actualizamos el array 'data' usando la variable numericValue
+    this.data = this.data.map(row => {
+        if (row.Id === context) {
+            // AQUÍ es donde usamos numericValue para asegurar que sea entero
+            return { ...row, pjeContrato: numericValue };
+        }
+        return row; 
+    });
+
+    // Notificamos al OmniScript y ejecutamos el IP de guardado
+    const payloadToSend = this._mapDataForOutbound(this.data);
+    this.omniApplyCallResp({ [this.responseNode]: payloadToSend });
+    this.callIntegrationProcedure(payloadToSend);
+}
 
   _mapDataForOutbound(rows) {
   return (rows || []).map(r => {

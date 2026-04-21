@@ -1,0 +1,21 @@
+<template>
+    <div class="slds-box slds-theme_default">
+        <template if:true={fileId}>
+            <div class="slds-grid slds-grid_vertical-align-center">
+                <lightning-icon icon-name="doctype:pdf" size="medium" class="slds-m-right_small"></lightning-icon>
+                <div>
+                    <lightning-button 
+                        label="Ver Contrato" 
+                        variant="brand" 
+                        onclick={handlePreview}
+                        icon-name="utility:preview">
+                    </lightning-button>
+                </div>
+            </div>
+        </template>
+        
+        <template if:false={fileId}>
+            <p class="slds-text-color_error">Esperando ID de archivo...</p>
+        </template>
+    </div>
+</template>

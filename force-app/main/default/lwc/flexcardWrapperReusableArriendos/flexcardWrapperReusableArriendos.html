@@ -25,16 +25,17 @@
         </lightning-button>
       </template>
 
-      <lightning-datatable
+      <!--Se usa un lwc custom en lugar del: lightning-datatable-->
+      <c-custom-datatable
         key-field="Id"
         data={data}
         columns={columns}
         draft-values={draftValues}
         onsave={handleSave}
-        onrowaction={handleRowAction}
+        onpicklistchanged={handlePicklistChange} onrowaction={handleRowAction}
         onrowselection={handleRowSelection}
         hide-checkbox-column={hideCheckboxColumn}>
-      </lightning-datatable>
+      </c-custom-datatable>
     </div>
   </section>
 </template>
