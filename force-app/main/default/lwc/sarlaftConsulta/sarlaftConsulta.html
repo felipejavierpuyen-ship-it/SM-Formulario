@@ -1,0 +1,133 @@
+<template>
+    <lightning-card title="Consulta Sarlaft" icon-name="standard:scan_card">
+
+<div class="slds-p-around_large scroll-container">
+            <div class="slds-grid slds-gutters slds-align-end">
+
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-combobox
+                        name="documentType"
+                        label="Tipo de documento"
+                        value={documentType}
+                        options={documentTypeOptions}
+                        onchange={handleChange}>
+                    </lightning-combobox>
+                </div>
+
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-input
+                        name="documentNumber"
+                        label="Número de documento"
+                        type="search"
+                        placeholder="Buscar..."
+                        value={documentNumber}
+                        onchange={handleChange}
+                        onkeyup={handleEnter}>
+                    </lightning-input>
+                </div>
+            </div>
+
+            <template if:true={isLoading}>
+                <div class="centered">
+                    <lightning-spinner alternative-text="Consultando"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={errorMessage}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium">
+                    <lightning-icon icon-name="utility:error"
+                                    size="small"
+                                    class="slds-m-right_small">
+                    </lightning-icon>
+                    <span>{errorMessage}</span>
+                </div>
+            </template>
+
+            <template if:true={result}>
+
+                <div class="slds-m-top_large slds-box result-card">
+
+                    <h2 class="slds-text-heading_small slds-text-align_center slds-m-bottom_medium slds-text-color_success">
+                        RESPUESTA SARLAFT
+                    </h2>
+
+
+
+                            <div class="field-row">
+                                <span class="label">Nombre completo</span>
+                                <span class="value">
+                                    {result.firstName}
+                                </span>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Tipo documento</span>
+                                <span class="value">{result.documentType}</span>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Vigencia</span>
+                                <template if:true={result.isFormValid}>
+                                    <span class="badge-success">Vigente</span>
+                                </template>
+                                <template if:false={result.isFormValid}>
+                                    <span class="badge-error">Vencido</span>
+                                </template>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Última firma</span>
+                                <span class="value">{result.lastModificationDate}</span>
+                            </div>
+
+
+
+                            <div class="field-row">
+                                <span class="label">Número identificación</span>
+                                <span class="value">{result.documentNumber}</span>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Estado</span>
+                                <span class="value error-text">{result.message}</span>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Fecha vencimiento</span>
+                                <span class="value">{result.expirationDate}</span>
+                            </div>
+
+                            <div class="field-row">
+                                <span class="label">Detalle</span>
+                                <template if:true={result.detailLink}>
+                                <template if:true={canViewForm}>
+                                    <a href={result.detailLink} target="_blank">
+                                        Ver formulario
+                                    </a>
+                                </template>
+
+                                <template if:false={canViewForm}>
+                                    <span class="disabled-link">
+                                        Ver formulario
+                                    </span>
+                                </template>
+
+                            </template>
+                                <template if:false={result.detailLink}>
+                                    —
+                                </template>
+                            </div>
+
+
+                    <div class="notice-text">
+                        Esta consulta refleja el estado del formulario en el momento
+                        en que se ejecuta y puede cambiar posteriormente.
+                    </div>
+
+                </div>
+
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

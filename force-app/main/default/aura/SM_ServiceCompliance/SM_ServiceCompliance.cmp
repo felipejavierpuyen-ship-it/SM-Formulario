@@ -1,0 +1,70 @@
+<aura:component controller="ConsultarComplianceController" implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:lightningQuickAction" >
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="msgError" type="String" />
+    <aura:attribute name="dataValue" type="Object"/>
+    <aura:attribute name="resultados" type="Object"/>
+    <aura:attribute name="showSpinner" type="boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    
+    <aura:html tag="style">
+        .slds-modal__container{
+        width: 60% !important;
+        max-width: 60% !important;}
+        .sizeP{
+        font-size: 15px;
+        }
+        .sizeRed{
+        color: red; font-size: 16px; font-weight: 900;
+        }
+        .sizeGreen{
+        color: green; font-size: 16px; font-weight: 900;
+        }
+    </aura:html>
+    
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner alternativeText="Loading" size="large"/>
+    </aura:if>
+
+    <p style=" color: red; font-size: 16px; font-weight: 500;">{!v.msgError}</p><br></br>
+    
+    <div class="slds-media__body">
+        <h1 class="slds-card__header-title">
+            <span>Información de Compliance - Sarlaft</span>
+        </h1>
+    </div>
+    <div class="slds-card__body slds-card__body_inner">
+        <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Documento Consultado</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">{!v.dataValue.RiskCompliance.documentoConsultado}</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Tipo de Documento</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">{!v.dataValue.RiskCompliance.tipoDocumento}</p></div>
+        </div>
+        <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Nombre Consultado</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">{!v.dataValue.RiskCompliance.nombreConsultado}</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Total Fuentes Consultadas</p></div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">{!v.dataValue.RiskCompliance.totalFuentesConsultadas}</p></div>
+        </div> 
+        <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Presenta Riesgo</p></div>
+            <div class="slds-col slds-size_1-of-4">
+                <aura:if isTrue="{!v.dataValue.RiskCompliance.presentaRiesgo}">
+                    <p class="sizeRed">{!v.dataValue.RiskCompliance.presentaRiesgo}</p>
+                    <aura:set attribute="else">
+                        <p class="sizeGreen">{!v.dataValue.RiskCompliance.presentaRiesgo}</p>
+                    </aura:set>
+                </aura:if>
+            </div>
+            <div class="slds-col slds-size_1-of-4"><p class="sizeP">Tiene Resultados</p></div>
+            <div class="slds-col slds-size_1-of-4">
+                <aura:if isTrue="{!v.dataValue.RiskCompliance.tieneResultados}">
+                    <p class="sizeRed">{!v.dataValue.RiskCompliance.tieneResultados}</p>
+                    <aura:set attribute="else">
+                        <p class="sizeGreen">{!v.dataValue.RiskCompliance.tieneResultados}</p>
+                    </aura:set>
+                </aura:if>
+            </div>
+        </div>
+        <br></br>
+    </div>
+</aura:component>

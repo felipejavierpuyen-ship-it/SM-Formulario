@@ -1,0 +1,11 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader">
+    <c:sarlaftConsulta />
+    
+    <aura:html tag="style">
+        .slds-modal__container {
+            width: 70% !important;
+            max-width: 70% !important;
+        }
+        
+    </aura:html>
+</aura:component>

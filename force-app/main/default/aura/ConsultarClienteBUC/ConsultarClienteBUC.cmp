@@ -1,0 +1,152 @@
+<aura:component controller="ConsultarClienteBUCController" implements="flexipage:availableForAllPageTypes,force:hasRecordId" access="global">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <aura:attribute name="noShowCheck" type="Boolean" default="true" />
+    <aura:attribute name="showSpinner" type="boolean" default="false"/>
+    <aura:attribute name="dataValue" type="Object"/>
+    <aura:attribute name="openNewAcc" type="boolean" default="false"/>
+    <aura:attribute name="columnsValue" type="List"/>
+    <aura:attribute name="nroDocbuc" type="String"/>
+    <aura:attribute name="tipoDocbuc" type="String"/>
+    
+    <aura:attribute name="accountPerson" type="Account" default="{'sobjectType':'Account','SM_CorreoElectronico__c': '',
+                                                                 'FirstName': '',			'LastName': '',
+                                                                 'Autorizaci_n_tratamiento_de_datos__c': '',		'Phone': '',
+                                                                 'PersonMobilePhone': ''}"/>
+    <aura:attribute name="accountEmpresa" type="Account" default="{'sobjectType':'Account',	'SM_CorreoElectronico__c': '',
+                                                                  'Name': '',	'Autorizaci_n_tratamiento_de_datos__c': '',
+                                                                  'Phone': ''}"/>
+    
+    <article class="slds-card slds-card_boundary headerBottomBorder forceRelatedListCardDesktop">
+        <div class="slds-card__header slds-grid slds-page-header forceRelatedListCardHeader">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon iconName="standard:case" alternativeText="Case" title="Case" size="small" />
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <span>Consultar en BUC</span>
+                    </h2>
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning:input aura:id="nroDocbuc" name="NroDocbuc" value="{!v.nroDocbuc}" label="Nro. de Documento" disabled="true"/>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning:select aura:id="tipoDocbuc" name="TipoDocbuc" value="{!v.tipoDocbuc}" label="Tipo de Documento" 
+                                      required="true" disabled="true">
+                        <option value="">--Ninguno--</option>
+                        <option value="Cédula de ciudadanía">Cédula de ciudadanía(CC)</option>
+                        <option value="Cédula Extranjería">Cédula Extranjería(CE)</option>
+                        <option value="Tarjeta de identidad">Tarjeta de identidad(TI)</option>
+                        <option value="Pasaporte">Pasaporte(PS)</option>
+                        <option value="Permiso Especial de Permanencia">Permiso Especial de Permanencia</option>
+                        <option value="NIT">NRO DE NIT</option>
+                    </lightning:select>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-align-bottom">
+                    <lightning:button variant="brand" label="Consultar" title="Consultar" onclick="{! c.handleConsultarBUC }" />
+                </div>
+            </div>
+            <!--<div class="slds-grid slds-gutters"><div style=""><lightning:datatable keyField="idPersona" data="{!v.dataValue }"
+                                         columns="{!v.columnsValue }" hideCheckboxColumn="{!v.noShowCheck }"/></div></div>-->
+            <br/>
+            <br/>
+            <aura:if isTrue="{!v.openNewAcc}">
+                <aura:if isTrue="{!v.tipoDocbuc == 'NIT'}">
+                    <lightning:card iconName="standard:account" title="Información Cuenta Empresa">
+                        <div class="slds-p-around_medium" style="padding-top: 0px;">
+                            <lightning:layout>
+                                <lightning:layoutItem size="4" padding="around-small">
+                                    <lightning:input aura:id="requiredAccount" label="Nombre" type="text" value="{!v.accountEmpresa.Name}" 
+                                                     maxlength="80" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="4" padding="around-small">
+                                    <lightning:select aura:id="requiredAccount" value="{!v.accountEmpresa.Autorizaci_n_tratamiento_de_datos__c}"
+                                                      name="autDatos" label="Autorización tratamiento de datos" required="true">
+                                        <option value="">--Ninguno--</option>
+                                        <option value="1">SI</option>
+                                        <option value="2">NO</option>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="4" padding="around-small">
+                                    <lightning:input aura:id="requiredAccount" label="Email" type="email" 
+                                                     value="{!v.accountEmpresa.SM_CorreoElectronico__c}" required="true"/>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                            <div style="margin-top: -20px;">
+                                <lightning:layout>
+                                    <lightning:layoutItem size="4" padding="around-small">
+                                        <lightning:input aura:id="requiredAccount" label="Teléfono" type="phone" 
+                                                         value="{!v.accountEmpresa.Phone}" placeholder="+579912345678" required="true"/>
+                                    </lightning:layoutItem>
+                                    <lightning:layoutItem size="4" padding="around-small" class="slds-align-bottom">
+                                        <lightning:button variant="brand" label="Crear Cuenta Empresa" title="Person Acc" onclick="{!c.crearEmpresaAccount}" />
+                                    </lightning:layoutItem> 
+                                </lightning:layout>
+                            </div>
+                        </div>
+                    </lightning:card> 
+                    
+                    
+                    <aura:set attribute="else">
+                        <lightning:card iconName="standard:account" title="Información Cuenta Persona">
+                            <div class="slds-p-around_medium" style="padding-top: 0px;">
+                                <lightning:layout>
+                                    <lightning:layoutItem size="4" padding="around-small">
+                                        <lightning:input aura:id="requiredAccount" label="Nombre" type="text" value="{!v.accountPerson.FirstName}"
+                                                         maxlength="40" required="true"/>
+                                    </lightning:layoutItem> 
+                                    <lightning:layoutItem size="4" padding="around-small">
+                                        <lightning:input aura:id="requiredAccount" label="Apellidos" type="text" value="{!v.accountPerson.LastName}"
+                                                         maxlength="80" required="true"/>
+                                    </lightning:layoutItem>
+                                    <lightning:layoutItem size="4" padding="around-small">
+                                        <lightning:select aura:id="requiredAccount" value="{!v.accountPerson.Autorizaci_n_tratamiento_de_datos__c}"
+                                                          name="autDatos" label="Autorización tratamiento de datos" required="true">
+                                            <option value="">--Ninguno--</option>
+                                            <option value="1">SI</option>
+                                            <option value="2">NO</option>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                                <div style="margin-top: -20px;">
+                                    <lightning:layout>
+                                        <lightning:layoutItem size="4" padding="around-small">
+                                            <lightning:input aura:id="requiredAccount" label="Email" type="email" 
+                                                             value="{!v.accountPerson.SM_CorreoElectronico__c}" required="true"/>
+                                        </lightning:layoutItem>
+                                        
+                                        <lightning:layoutItem size="4" padding="around-small">
+                                            <lightning:input aura:id="requiredAccount" label="Teléfono" type="phone" 
+                                                             value="{!v.accountPerson.Phone}" placeholder="+579912345678" required="true"/>
+                                        </lightning:layoutItem> 
+                                        <lightning:layoutItem size="4" padding="around-small">
+                                            <lightning:input aura:id="requiredAccount" label="Mobil" type="phone" 
+                                                             value="{!v.accountPerson.PersonMobilePhone}" placeholder="+579912345678" required="true"/>
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+                                </div>
+                                <div class="slds-col slds-size_1-of-3 slds-align-bottom">
+                                    <lightning:button variant="brand" label="Crear Cuenta Persona" title="Crear Cuenta Persona"
+                                                      onclick="{!c.crearPersonAccount}" />
+                                </div>
+                            </div>
+                        </lightning:card> 
+                    </aura:set>
+                </aura:if>
+                
+            </aura:if>
+        </div>
+    </article>
+    <aura:if isTrue="{!v.showSpinner}">
+        <div class="spinnerContainer">
+            <lightning:spinner alternativeText="Consultando en BUC" size="large" title="Consultando en BUC"/>
+        </div>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    
+</aura:component>
